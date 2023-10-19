@@ -23,7 +23,7 @@ TAGS
 
 # common cmake build folder names
 build/
-build*
+/build*
 debug/
 release/
 cmake-build-debug/

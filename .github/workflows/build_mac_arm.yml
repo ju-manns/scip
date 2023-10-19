@@ -1,0 +1,63 @@
+name: Build and Package for macOS ARM
+
+on:
+  push:
+    branches:
+      - m1-precompiled-package
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Homebrew
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+        if: success() # Install Homebrew only if the previous step succeeds
+
+      - name: Install required dependencies
+        run: |
+          brew install cmake curl
+        if: success() # Install dependencies only if the previous step succeeds
+
+      - name: Set up ARM64 toolchain
+        run: |
+          export HOMEBREW_ARCH=arm64
+          export PATH="/opt/homebrew/bin:$PATH"
+        if: success() # Set up the ARM64 toolchain only if the previous step succeeds
+
+      - name: Build soplex
+        run: |
+          curl -L https://github.com/scipopt/soplex/archive/refs/tags/release-604.tar.gz | tar xz
+          cd soplex-release-604
+          mkdir build
+          cd build
+          cmake -DCMAKE_INSTALL_PREFIX=../../soplex ..
+          make
+          make install
+        if: success() # Build soplex only if the previous steps succeed
+
+      - name: Build C++ program
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_PREFIX_PATH=../soplex -DAUTOBUILD=ON -DCMAKE_BUILD_TYPE=Release
+          make
+        if: success() # Build the program only if the previous steps succeed
+
+      # - name: Package the program
+      #   run: |
+      #     # Create a package (e.g., a ZIP or DMG file) from the compiled program
+      #     # You may need to modify this step based on your packaging requirements
+      #     # For example, you can use `cp` to copy the program to a package directory
+      #     # and then create a ZIP or DMG file from that directory.
+      #   if: success() # Package the program only if the previous steps succeed
+
+      # - name: Upload package artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: my_program_package # Replace with your desired artifact name
+      #     path: path/to/package # Replace with the actual path to your packaged program
